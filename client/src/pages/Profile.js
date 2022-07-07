@@ -1,11 +1,16 @@
 import React from 'react';
+import { useQuery, useMutation } from '@apollo/client';
 import { Navigate, useParams } from 'react-router-dom';
+
 import ThoughtList from '../components/ThoughtList';
+import FriendList from '../components/FriendList';
+import Auth from '../utils/auth';
+import ThoughtForm from '../components/ThoughtForm';
+
+import { QUERY_ME_BASIC } from '../utils/queries';
+import { ADD_FRIEND } from '../utils/mutations';
 import { useQuery } from '@apollo/client';
 import { QUERY_USER } from '../utils/queries';
-import FriendList from '../components/FriendList';
-import { QUERY_ME_BASIC } from '../utils/queries';
-import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = UseParams();
@@ -13,6 +18,17 @@ const Profile = () => {
     variables: { username: userParam }
   });
   const user = data?.me || data?.user || {};
+  const [addFriend] = useMutation(ADD_FRIEND);
+
+  const handleClick = async () => {
+    try {
+      await addFriend({
+        variables: { id: user._id }
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to='/profile' />;
@@ -36,6 +52,11 @@ const Profile = () => {
         <h2 className="bg-dark text-secondary p-3 display-inline-block">
           Viewing {userParam ? `${user.username}'s` : 'your'} profile.
         </h2>
+        {userParam && (
+          <button className='btn ml-auto' onClick={handleClick}>
+            Add Friend
+          </button>
+        )}
       </div>
 
       <div className="flex-row justify-space-between mb-3">
@@ -47,6 +68,7 @@ const Profile = () => {
           <FriendList username={user.username} friendCount={user.friendCount} friends={user.friends} />
         </div>
       </div>
+      <div className='mb-3'>{!userParam && <ThoughtForm />}</div>
     </div>
   );
 };
